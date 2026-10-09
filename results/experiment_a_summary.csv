@@ -1,0 +1,7 @@
+algorithm,avg_cpu_util_mean,avg_cpu_util_std,avg_ram_util_mean,avg_ram_util_std,sla_violation_rate_mean,sla_violation_rate_std,hard_rule_violations_mean,hard_rule_violations_std,avg_waiting_time_mean,avg_waiting_time_std,total_energy_kwh_mean,total_energy_kwh_std,total_cost_usd_mean,total_cost_usd_std,scale_events_mean,scale_events_std,avg_decision_time_ms_mean,avg_decision_time_ms_std,explainability_pct_mean,explainability_pct_std
+Round Robin,70.665,5.77,38.292,2.7,11.85,3.883,237.8,34.838,1.794,0.615,6.092,0.293,14.244,0.059,12.0,0.0,0.005,0.001,100.0,0.0
+First Fit,70.665,5.77,38.292,2.7,14.05,6.33,306.6,22.534,1.852,0.717,5.91,0.294,13.362,0.189,12.0,0.0,0.004,0.001,100.0,0.0
+Best Fit,70.665,5.77,38.292,2.7,11.85,3.421,320.8,10.663,1.726,0.578,5.823,0.321,13.222,0.227,12.0,0.0,0.006,0.001,100.0,0.0
+Pure Symbolic,68.753,2.756,37.474,1.374,28.75,9.112,0.0,0.0,4.429,1.883,5.786,0.159,13.6,0.157,12.0,0.0,0.045,0.009,100.0,0.0
+Pure Neural,70.658,5.753,38.287,2.689,12.1,4.148,207.2,34.267,1.783,0.621,6.038,0.297,14.255,0.052,12.0,0.0,0.771,0.031,100.0,0.0
+Neuro-Symbolic,68.54,2.477,37.531,1.485,27.2,9.623,0.0,0.0,4.273,1.897,5.776,0.15,13.6,0.157,12.0,0.0,0.886,0.029,100.0,0.0

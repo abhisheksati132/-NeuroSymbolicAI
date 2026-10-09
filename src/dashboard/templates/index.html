@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuro-Symbolic Cloud Allocator | Demo Dashboard</title>
+    <!-- Chart.js via CDN with local fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-dark: #0284c7;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-yellow: #fbbf24;
+            --border-color: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
+        .title-group h1 { font-size: 1.6rem; color: var(--primary); font-weight: 700; }
+        .title-group p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+        .badge { background: #0369a1; color: #e0f2fe; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        
+        .control-panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 25px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input { background: #0f172a; border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: 6px; font-size: 0.95rem; outline: none; }
+        select:focus, input:focus { border-color: var(--primary); }
+        .btn-run { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s ease; display: flex; align-items: center; gap: 8px; }
+        .btn-run:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-run:disabled { background: #475569; cursor: not-allowed; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 25px; }
+        .kpi-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; text-align: left; }
+        .kpi-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; margin-top: 6px; color: var(--text-main); }
+        .kpi-unit { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; margin-left: 2px; }
+        
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; height: 320px; display: flex; flex-direction: column; }
+        .chart-card h3 { font-size: 1rem; color: var(--primary); margin-bottom: 15px; }
+        .chart-container { flex: 1; position: relative; width: 100%; height: 100%; }
+
+        .trace-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; margin-bottom: 25px; }
+        .trace-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .trace-header h3 { font-size: 1.05rem; color: var(--accent-yellow); }
+        .table-wrapper { overflow-x: auto; max-height: 380px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        th { background: #0f172a; color: var(--text-muted); padding: 10px 12px; font-weight: 600; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color); }
+        td { padding: 10px 12px; border-bottom: 1px solid #2d3748; }
+        tr:hover td { background: rgba(56, 189, 248, 0.05); }
+        .status-pill { padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .pill-safe { background: rgba(52, 211, 153, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .pill-violated { background: rgba(248, 113, 113, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .code-trace { font-family: 'Consolas', monospace; font-size: 0.78rem; color: #cbd5e1; max-width: 600px; white-space: normal; line-height: 1.3; }
+        
+        .footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="title-group">
+                <h1>Neuro-Symbolic Cloud Resource Allocator</h1>
+                <p>BCSE355L Cloud Architecture Design | Faculty: Padmavathy T (SCOPE) | Live Demo Dashboard</p>
+            </div>
+            <span class="badge">Team: Deepanshu, Sanjay, Abhishek</span>
+        </header>
+
+        <div class="control-panel">
+            <div class="form-group" style="flex: 2; min-width: 220px;">
+                <label for="algoSelect">Allocation Policy</label>
+                <select id="algoSelect">
+                    <option value="Neuro-Symbolic (Proposed)" selected>Neuro-Symbolic [Proposed GRU + Symbolic Rules]</option>
+                    <option value="Pure Symbolic">Pure Symbolic [Rule Engine Only - No Forecast]</option>
+                    <option value="Pure Neural">Pure Neural [Demand Forecast Only - No Rules]</option>
+                    <option value="Best Fit">Best Fit [Baseline Heuristic]</option>
+                    <option value="First Fit">First Fit [Baseline Heuristic]</option>
+                    <option value="Round Robin">Round Robin [Baseline Heuristic]</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="tasksInput">Workload Size</label>
+                <input type="number" id="tasksInput" value="300" min="50" max="2000" step="50" style="width: 120px;">
+            </div>
+            <div class="form-group">
+                <label for="seedInput">Random Seed</label>
+                <input type="number" id="seedInput" value="42" min="1" max="999" style="width: 100px;">
+            </div>
+            <button class="btn-run" id="btnRun" onclick="runSimulation()">
+                <span id="btnText">Execute Simulation</span>
+            </button>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Avg CPU Utilization</div>
+                <div class="kpi-value" id="kpiCpu">--<span class="kpi-unit">%</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Avg RAM Utilization</div>
+                <div class="kpi-value" id="kpiRam">--<span class="kpi-unit">%</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">SLA Violation Rate</div>
+                <div class="kpi-value" id="kpiSla" style="color: var(--primary);">--<span class="kpi-unit">%</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Hard Rule Violations</div>
+                <div class="kpi-value" id="kpiViolations">--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Energy</div>
+                <div class="kpi-value" id="kpiEnergy">--<span class="kpi-unit">kWh</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Cost</div>
+                <div class="kpi-value" id="kpiCost">$--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Avg Decision Latency</div>
+                <div class="kpi-value" id="kpiLatency">--<span class="kpi-unit">ms</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Rule Explainability</div>
+                <div class="kpi-value" id="kpiExplain" style="color: var(--accent-green);">--<span class="kpi-unit">%</span></div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Cluster Resource Utilization Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="utilChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Aggregate Datacenter Power Dissipation (Watts)</h3>
+                <div class="chart-container">
+                    <canvas id="powerChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="trace-card">
+            <div class="trace-header">
+                <h3>Auditable Symbolic Decision & Rule Explanation Log</h3>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time rule traces & constraint validation</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="traceTable">
+                    <thead>
+                        <tr>
+                            <th>Task ID</th>
+                            <th>Tenant</th>
+                            <th>Priority</th>
+                            <th>Demand (CPU/RAM)</th>
+                            <th>Target Host</th>
+                            <th>Safety Bound</th>
+                            <th>Fired Rules & Reasoning Trace</th>
+                        </tr>
+                    </thead>
+                    <tbody id="traceBody">
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 25px;">Click "Execute Simulation" to generate real-time execution trace.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            BCSE355L Cloud Architecture Design | Department of SCOPE | Vellore Institute of Technology
+        </div>
+    </div>
+
+    <script>
+        let utilChartInstance = null;
+        let powerChartInstance = null;
+
+        async function runSimulation() {
+            const btn = document.getElementById("btnRun");
+            const btnText = document.getElementById("btnText");
+            btn.disabled = true;
+            btnText.innerText = "Simulating...";
+
+            const payload = {
+                algorithm: document.getElementById("algoSelect").value,
+                num_tasks: parseInt(document.getElementById("tasksInput").value),
+                seed: parseInt(document.getElementById("seedInput").value),
+                time_horizon: 100
+            };
+
+            try {
+                const response = await fetch("/api/run", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (err) {
+                console.error("Simulation error:", err);
+                alert("Error running simulation: " + err);
+            } finally {
+                btn.disabled = false;
+                btnText.innerText = "Execute Simulation";
+            }
+        }
+
+        function updateDashboard(data) {
+            const m = data.metrics;
+            document.getElementById("kpiCpu").innerHTML = `${m.avg_cpu_util}<span class="kpi-unit">%</span>`;
+            document.getElementById("kpiRam").innerHTML = `${m.avg_ram_util}<span class="kpi-unit">%</span>`;
+            
+            const slaEl = document.getElementById("kpiSla");
+            slaEl.innerHTML = `${m.sla_violation_rate}<span class="kpi-unit">%</span>`;
+            slaEl.style.color = m.sla_violation_rate > 10 ? "var(--accent-red)" : "var(--accent-green)";
+
+            const violEl = document.getElementById("kpiViolations");
+            violEl.innerText = m.hard_rule_violations;
+            violEl.style.color = m.hard_rule_violations > 0 ? "var(--accent-red)" : "var(--accent-green)";
+
+            document.getElementById("kpiEnergy").innerHTML = `${m.energy_kwh}<span class="kpi-unit">kWh</span>`;
+            document.getElementById("kpiCost").innerText = `$${m.cost_usd.toFixed(2)}`;
+            document.getElementById("kpiLatency").innerHTML = `${m.decision_latency_ms}<span class="kpi-unit">ms</span>`;
+            document.getElementById("kpiExplain").innerHTML = `${m.explainability_pct}<span class="kpi-unit">%</span>`;
+
+            // Update Charts
+            const steps = data.step_history.map(s => `T+${s.step}`);
+            const cpuVals = data.step_history.map(s => s.cpu_util);
+            const ramVals = data.step_history.map(s => s.ram_util);
+            const powerVals = data.step_history.map(s => s.power_watts);
+
+            if (utilChartInstance) utilChartInstance.destroy();
+            const ctxUtil = document.getElementById("utilChart").getContext("2d");
+            utilChartInstance = new Chart(ctxUtil, {
+                type: "line",
+                data: {
+                    labels: steps,
+                    datasets: [
+                        { label: "CPU Util (%)", data: cpuVals, borderColor: "#38bdf8", backgroundColor: "rgba(56, 189, 248, 0.1)", tension: 0.3, fill: true },
+                        { label: "RAM Util (%)", data: ramVals, borderColor: "#a855f7", backgroundColor: "transparent", borderDash: [4, 4], tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: "#334155" }, ticks: { color: "#94a3b8" } },
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8", maxTicksLimit: 12 } }
+                    },
+                    plugins: { legend: { labels: { color: "#f8fafc" } } }
+                }
+            });
+
+            if (powerChartInstance) powerChartInstance.destroy();
+            const ctxPower = document.getElementById("powerChart").getContext("2d");
+            powerChartInstance = new Chart(ctxPower, {
+                type: "line",
+                data: {
+                    labels: steps,
+                    datasets: [
+                        { label: "Datacenter Power (Watts)", data: powerVals, borderColor: "#34d399", backgroundColor: "rgba(52, 211, 153, 0.15)", tension: 0.3, fill: true }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: "#334155" }, ticks: { color: "#94a3b8" } },
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8", maxTicksLimit: 12 } }
+                    },
+                    plugins: { legend: { labels: { color: "#f8fafc" } } }
+                }
+            });
+
+            // Update Trace Table
+            const tbody = document.getElementById("traceBody");
+            tbody.innerHTML = "";
+            data.task_traces.forEach(t => {
+                const tr = document.createElement("tr");
+                const pBadge = t.priority === 3 ? "P3 (Crit)" : (t.priority === 2 ? "P2 (Web)" : "P1 (Batch)");
+                const statusBadge = t.hard_violation 
+                    ? `<span class="status-pill pill-violated">VIOLATION</span>`
+                    : `<span class="status-pill pill-safe">SAFE</span>`;
+                
+                tr.innerHTML = `
+                    <td><strong>${t.task_id}</strong></td>
+                    <td>${t.tenant}</td>
+                    <td>${pBadge}</td>
+                    <td>${t.cpu_req}C / ${t.ram_req}GB</td>
+                    <td><code>${t.target_host}</code></td>
+                    <td>${statusBadge}</td>
+                    <td class="code-trace">${t.trace}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Auto-run default on initial page load
+        window.addEventListener("DOMContentLoaded", () => {
+            runSimulation();
+        });
+    </script>
+</body>
+</html>

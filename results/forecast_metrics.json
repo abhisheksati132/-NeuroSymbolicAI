@@ -1,0 +1,7 @@
+{
+  "mae_cpu": 15.8565,
+  "rmse_cpu": 19.4177,
+  "mae_ram": 46.5265,
+  "rmse_ram": 59.078,
+  "test_samples": 44
+}

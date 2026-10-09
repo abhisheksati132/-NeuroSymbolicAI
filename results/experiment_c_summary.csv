@@ -1,0 +1,4 @@
+variant,sla_violation_rate_mean,sla_violation_rate_std,hard_rule_violations_mean,hard_rule_violations_std,avg_cpu_util_mean,avg_cpu_util_std,total_cost_usd_mean,total_cost_usd_std,total_energy_kwh_mean,total_energy_kwh_std,avg_decision_time_ms_mean,avg_decision_time_ms_std,explainability_pct_mean,explainability_pct_std
+Without Forecast (Pure Symbolic),44.8,3.915,0.0,0.0,74.45,0.462,16.169,0.077,7.15,0.023,0.0417,0.0012,100.0,0.0
+Without Rules (Pure Neural),34.767,7.866,474.0,24.29,90.727,2.347,16.709,0.036,8.229,0.127,0.9221,0.0144,100.0,0.0
+Full Neuro-Symbolic,45.367,4.186,0.0,0.0,74.498,0.742,16.169,0.077,7.159,0.045,1.0218,0.0083,100.0,0.0
