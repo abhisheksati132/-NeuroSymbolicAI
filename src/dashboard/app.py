@@ -26,16 +26,23 @@ from src.allocator.baselines import (
 )
 from src.allocator.neuro_symbolic import NeuroSymbolicAllocator
 
-app = Flask(__name__)
+template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+app = Flask(__name__, template_folder=template_dir)
 
 # Initialize demand forecaster
 forecaster = DemandForecaster()
-model_path = os.path.join(BASE_DIR, "results", "demand_forecaster.pt")
-if os.path.exists(model_path):
+model_npz = os.path.join(BASE_DIR, "results", "demand_forecaster_weights.npz")
+model_pt = os.path.join(BASE_DIR, "results", "demand_forecaster.pt")
+if os.path.exists(model_npz):
     try:
-        forecaster.load_model(model_path)
+        forecaster.load_model(model_npz)
     except Exception as e:
-        print(f"Warning loading model: {e}")
+        print(f"Warning loading NPZ weights: {e}")
+elif os.path.exists(model_pt):
+    try:
+        forecaster.load_model(model_pt)
+    except Exception as e:
+        print(f"Warning loading PT model: {e}")
 
 
 def get_allocator(name: str):
