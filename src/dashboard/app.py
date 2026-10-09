@@ -63,12 +63,17 @@ def get_allocator(name: str):
         return NeuroSymbolicAllocator(forecaster=forecaster)
 
 
-@app.route("/")
+@app.route("/", methods=["GET"])
+@app.route("/api", methods=["GET"])
+@app.route("/api/index", methods=["GET"])
+@app.route("/api/index.py", methods=["GET"])
+@app.route("/index", methods=["GET"])
 def index():
     return render_template("index.html")
 
 
 @app.route("/api/run", methods=["POST"])
+@app.route("/run", methods=["POST"])
 def run_simulation_api():
     data = request.json or {}
     algo_name = data.get("algorithm", "Neuro-Symbolic (Proposed)")
@@ -213,6 +218,13 @@ def run_simulation_api():
         "step_history": env.step_history,
         "task_traces": task_traces,
     })
+
+
+@app.errorhandler(404)
+def handle_404(e):
+    if request.method == "GET":
+        return render_template("index.html")
+    return jsonify({"error": "Resource not found"}), 404
 
 
 if __name__ == "__main__":
