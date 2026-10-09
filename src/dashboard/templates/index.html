@@ -198,16 +198,27 @@
             };
 
             try {
-                const response = await fetch("/api/run", {
+                let response = await fetch("/api/run", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
+                if (!response.ok) {
+                    response = await fetch("/run", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`Server returned HTTP ${response.status}: ${errText.slice(0, 150)}`);
+                }
                 const data = await response.json();
                 updateDashboard(data);
             } catch (err) {
                 console.error("Simulation error:", err);
-                alert("Error running simulation: " + err);
+                alert("Simulation Error: " + err.message);
             } finally {
                 btn.disabled = false;
                 btnText.innerText = "Execute Simulation";

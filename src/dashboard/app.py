@@ -63,12 +63,14 @@ def get_allocator(name: str):
         return NeuroSymbolicAllocator(forecaster=forecaster)
 
 
-@app.route("/", methods=["GET"])
-@app.route("/api", methods=["GET"])
-@app.route("/api/index", methods=["GET"])
-@app.route("/api/index.py", methods=["GET"])
-@app.route("/index", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
+@app.route("/api", methods=["GET", "POST"])
+@app.route("/api/index", methods=["GET", "POST"])
+@app.route("/api/index.py", methods=["GET", "POST"])
+@app.route("/index", methods=["GET", "POST"])
 def index():
+    if request.method == "POST":
+        return run_simulation_api()
     return render_template("index.html")
 
 
